@@ -73,11 +73,7 @@ void HttpRequest::parse(std::string request)
             body = dechunkBody(raw_body);
         }
     }
-<<<<<<< HEAD
     else if (headers.find("content-length") != headers.end())
-=======
-    else if (hasContentLength())
->>>>>>> 3121f404ee64aca34833ae429db967ecf91e4502
     {
         size_t body_start = request.find("\r\n\r\n");
         if (body_start != std::string::npos)
@@ -254,10 +250,15 @@ void HttpRequest::validateUri()
         throw std::runtime_error("414 URI Too long");
     }
     if (uri[0] != '/')
-        {
-            std::cerr << "Error: URI must start with '/': " << uri << std::endl;
-            throw std::runtime_error("400 Bad HttpRequest: Invalid URI format");
-        }
+    {
+        std::cerr << "Error: URI must start with '/': " << uri << std::endl;
+        throw std::runtime_error("400 Bad HttpRequest: Invalid URI format");
+    }
+    if (uri.find("../") != std::string::npos)
+    {
+        std::cerr << "Err: Path traversal attempt detected: " << uri << std::endl;
+        throw std::runtime_error("400 Bad Request: Path traversal not allowd");
+    }
     std::cout << "URI validated: " << uri << std::endl;
 
 }
