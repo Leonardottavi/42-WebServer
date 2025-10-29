@@ -73,7 +73,11 @@ void HttpRequest::parse(std::string request)
             body = dechunkBody(raw_body);
         }
     }
+<<<<<<< HEAD
     else if (headers.find("content-length") != headers.end())
+=======
+    else if (hasContentLength())
+>>>>>>> 3121f404ee64aca34833ae429db967ecf91e4502
     {
         size_t body_start = request.find("\r\n\r\n");
         if (body_start != std::string::npos)
