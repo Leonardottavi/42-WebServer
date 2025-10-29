@@ -69,6 +69,7 @@ class HttpRequest
         std::map<std::string, std::string> cookies;
     
         std::map<std::string, UploadedFile> uploaded_files;
+        bool is_chunked;
 
 
     public:
@@ -104,6 +105,12 @@ class HttpRequest
         bool canRead(const std::string& path) const;
         bool canWrite(const std::string& path) const;
         bool canExecute(const std::string& path) const;
+
+        bool isChunked()const;
+
+        void parsedChunkedBody(const std::string& raw_body);
+        std::string dechunkBody(const std::string& chunked_data);
+//pas sur que ce doit etre la , peut etre private
     private:
         void validateContentLength();
         std::string toLower(const std::string& str)const;

@@ -1,12 +1,12 @@
 #include "Request.hpp"
 
-HttpRequest::HttpRequest(){}
+HttpRequest::HttpRequest(): content_length(0), has_content_length(false),is_chunked(false){}
 
-void HttpRequest::parse(std::string HttpRequest)
+void HttpRequest::parse(std::string request)
 {
     //on converti en stream la str pour eviter direct les 
     //espace entre les infos
-    std::istringstream stream(HttpRequest);
+    std::istringstream stream(request);
     std::string line;
 
     //on va lire la premier ligne
@@ -59,14 +59,32 @@ void HttpRequest::parse(std::string HttpRequest)
         headers[key] = value;
     }
     validateHost();
+    std::string transfer_encoding = getHeader("transfer-encoding");
+    if (transfer_encoding == "chunked" && hasContentLength())
+        throw std::runtime_error("400 Bad Request: Content-Length with Transfer-Encoding");
+    if (transfer_encoding == "chunked" )
+    {
+        is_chunked = true;
+        size_t body_start = request.find("\r\n\r\n");
+        if (body_start != std::string::npos)
+        {
+            body_start += 4;
+            std::string raw_body = request.substr(body_start);
+            body = dechunkBody(raw_body);
+        }
+    }
+    else if (hasContentLength())
+    {
+        size_t body_start = request.find("\r\n\r\n");
+        if (body_start != std::string::npos)
+        {
+            body_start += 4;
+            body = request.substr(body_start);
+        }
+        validateContentLength();
+        parsePostBody();
+    }
     parseCookies();
-    std::string body_contain;
-    char c;
-    while (stream.get(c))
-        body_contain += c;
-    body = body_contain;
-    validateContentLength();
-    parsePostBody();
 }
 
 void HttpRequest::validateContentLength()
@@ -747,3 +765,35 @@ bool HttpRequest::canExecute(const std::string &path)const
     // pour differents script cgi
 }
 
+void HttpRequest::parsedChunkedBody(const std::string &raw_body)
+{
+    (void)raw_body;
+    return;
+}
+
+std::string HttpRequest::dechunkBody(const std::string &chunked_data)
+{
+    std::string result;
+    
+    size_t pos = 0;
+    while (true)
+    {
+        size_t line_end = chunked_data.find("\r\n", pos);
+        if (line_end == std::string::npos)
+            throw std::runtime_error("400 Bad Request: Invalid chunk");
+        std::string size_line = chunked_data.substr(pos, line_end - pos);
+        size_t chunk_size = strtol(size_line.c_str(), NULL, 16);
+        // convert hexa a decimal
+        if (chunk_size == 0)
+            break;
+        pos = line_end + 2; // on saute \r\n pour ligne suivante
+        result += chunked_data.substr(pos, chunk_size);
+        pos = pos + chunk_size + 2;
+    }
+    return result;
+}
+
+bool HttpRequest::isChunked()const
+{
+    return is_chunked;
+}
