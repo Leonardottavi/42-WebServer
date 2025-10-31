@@ -7,7 +7,9 @@ std::vector<char *> CGIHandler::createEnv(const HttpRequest &request, const std:
     env.push_back("GATEWAY_INTERFACE=CGI/1.1");
     env.push_back("REQUEST_METHOD=" + request.getMethod());
     env.push_back("QUERY_STRING=" + request.getQuery());
-    env.push_back("CONTENT_LENGTH=" + std::to_string(request.getContentLength()));
+    std::ostringstream oss;
+    oss << request.getContentLength();
+    env.push_back("CONTENT_LENGTH=" + oss.str());
     env.push_back("CONTENT_TYPE=" + request.getHeader("Content-Type"));
     env.push_back("SCRIPT_FILENAME=" + root + script_path);
     env.push_back("PATH_INFO=" + script_path);
@@ -19,7 +21,7 @@ std::vector<char *> CGIHandler::createEnv(const HttpRequest &request, const std:
     std::vector<char *> env_c;
     for (size_t i = 0; i < env.size(); i++)
         env_c.push_back(strdup(env[i].c_str()));
-    env_c.push_back(nullptr);
+    env_c.push_back(NULL);
     return env_c;
 }
 
@@ -51,7 +53,7 @@ CgiProcess CGIHandler::spawnCgi(const HttpRequest &request, const std::string &s
         std::vector<char *> env = createEnv(request, script_path, root);
         char *args[2];
         args[0] = (char *)script_path.c_str();
-        args[1] = nullptr;
+        args[1] = NULL;
 
         execve(script_path.c_str(), args, env.data());
         perror("execve failed");

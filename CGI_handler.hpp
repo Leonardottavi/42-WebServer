@@ -9,6 +9,7 @@
 #include <sys/wait.h>
 #include "Request.hpp"
 #include "Response.hpp"
+#include <fcntl.h>
 
 struct CgiProcess
 {
