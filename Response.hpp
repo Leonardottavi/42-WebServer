@@ -1,6 +1,7 @@
 #ifndef RESPONSE_HPP
 #define RESPONSE_HPP
 
+#include <unistd.h>
 #include <iostream>
 #include <map>
 #include <sstream>
