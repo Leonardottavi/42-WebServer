@@ -356,6 +356,7 @@ void HttpRequest::parseQueryString()
     path = uri.substr(0, question_mark_pos);
     // on extrait tout avant le ? pour trouver le path
     std::string query_string = uri.substr(question_mark_pos + 1);
+    query = query_string;
     //inverse tout apres le ? 
     std::istringstream stream(query_string);
     // on let met en stream pour avant de morceau en morceau
@@ -400,6 +401,11 @@ std::string HttpRequest::getQueryParam(const std::string& key) const
 const std::map<std::string, std::string> &HttpRequest::getQueryParams()const
 {
     return query_params;
+}
+
+std::string HttpRequest::getQuery()const
+{
+    return query;
 }
 
 std::string HttpRequest::urlDecode(const std::string& str)const
@@ -872,4 +878,14 @@ int HttpRequest::getErrorCode()const
 std::string HttpRequest::getErrorMessage()const
 {
     return error_message;
+}
+
+bool isCgi(const std::string& path)
+{
+    return (
+        path.find("/cgi-bin/") != std::string::npos ||
+        path.find(".py") != std::string::npos ||
+        path.find(".php") != std::string::npos ||
+        path.find(".cgi") != std::string::npos
+    );
 }

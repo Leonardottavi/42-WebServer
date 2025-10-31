@@ -60,6 +60,7 @@ class HttpRequest
         std::string body;
         size_t content_length;
         bool has_content_length;
+        std::string query;
         static const size_t MAX_BODY_SIZE = 10485760;
         //10 mb
 
@@ -71,7 +72,7 @@ class HttpRequest
     
         std::map<std::string, UploadedFile> uploaded_files;
         bool is_chunked;
-
+        bool is_cgi;
         int error_code;
         std::string error_message;
     public:
@@ -81,35 +82,36 @@ class HttpRequest
         std::string getUri()const;
         std::string getVersion()const;
         std::string getBody()const;
-        void displayHeaders()const;
         std::string getHeader(std::string param)const;
         size_t getContentLength() const;
-        bool hasContentLength()const;
-        void validateMethod();
-        bool isMethodValid(const std::string& method)const;
-        const std::map<std::string, std::string>& getQueryParams() const;
         std::string getPath()const;
+        std::string getQuery() const;
         std::string getQueryParam(const std::string& key)const;
         std::string getPostParam(const std::string& key) const;
-
         const std::map<std::string, std::string>& getPostParams() const;
         std::string getCookie(const std::string &key)const;
         const std::map<std::string, std::string>& getCookies() const;
-    
+        const std::map<std::string, std::string>& getQueryParams() const;
         bool hasFile(const std::string& field_name) const;
         UploadedFile getFile(const std::string& field_name) const;
         std::vector<std::string> getFileNames() const;
+        size_t getFileSize(const std::string& path) const;
+        void displayHeaders()const;
+        bool hasContentLength()const;
+        void validateMethod();
+        bool isMethodValid(const std::string& method)const;
+        
 
         bool isRegularFile(const std:: string &path)const;
         bool isDirectory(const std::string& path_directory) const;
         bool fileExists(const std::string& path) const;
-        size_t getFileSize(const std::string& path) const;
+        
         bool canRead(const std::string& path) const;
         bool canWrite(const std::string& path) const;
         bool canExecute(const std::string& path) const;
 
         bool isChunked()const;
-
+        bool isCgi(const std::string&path);
         void parsedChunkedBody(const std::string& raw_body);
         std::string dechunkBody(const std::string& chunked_data);
 //pas sur que ce doit etre la , peut etre private
