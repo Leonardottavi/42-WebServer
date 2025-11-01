@@ -356,6 +356,7 @@ void HttpRequest::parseQueryString()
     path = uri.substr(0, question_mark_pos);
     // on extrait tout avant le ? pour trouver le path
     std::string query_string = uri.substr(question_mark_pos + 1);
+    query = query_string;
     //inverse tout apres le ? 
     std::istringstream stream(query_string);
     // on let met en stream pour avant de morceau en morceau
@@ -400,6 +401,11 @@ std::string HttpRequest::getQueryParam(const std::string& key) const
 const std::map<std::string, std::string> &HttpRequest::getQueryParams()const
 {
     return query_params;
+}
+
+std::string HttpRequest::getQuery()const
+{
+    return query;
 }
 
 std::string HttpRequest::urlDecode(const std::string& str)const
@@ -643,8 +649,15 @@ void HttpRequest::parseMultipartBody(const std::string& boundary)
         else if (pos < body.length() && body[pos] == '\n')
             pos+= 1;
     }
+    size_t total_files = 0;
+    std::map<std::string, std::vector<ParsedFile> >::const_iterator it;
+    for (it = parsed_files.begin(); it != parsed_files.end(); ++it)
+    {
+        total_files += it->second.size();
+    }
+    
     std::cout   << "Multipart body parsed: " << post_params.size() << " fields, "
-                << uploaded_files.size() << " files" << std::endl;
+                << total_files << " files" << std::endl;
 }
 
 void HttpRequest::parseSinglePart(const std::string& part)
@@ -720,13 +733,13 @@ void HttpRequest::parseSinglePart(const std::string& part)
    }
    if (!filename.empty())
    {
-    UploadedFile file;
+    ParsedFile file;
     file.field_name = name;
     file.filename = filename;
     file.content_type = content_type;
     file.data = content;
     file.size = content.length();
-    uploaded_files[name] = file;
+    parsed_files[name].push_back(file);
     std::cout   << " File uploaded: field='" <<name << ", filename='" << filename
                 << "', size=" << file.size << " bytes" << std::endl;
    }
@@ -739,28 +752,40 @@ void HttpRequest::parseSinglePart(const std::string& part)
 
 bool HttpRequest::hasFile(const std::string& field_name)const
 {
-    return uploaded_files.find(field_name) != uploaded_files.end();
+    std::map<std::string, std::vector<ParsedFile> >::const_iterator it = parsed_files.find(field_name);
+    return it != parsed_files.end() && !it->second.empty();
 }
 
-UploadedFile HttpRequest::getFile(const std::string& field_name) const
+ParsedFile HttpRequest::getFile(const std::string& field_name) const
 {
-    std::map<std::string, UploadedFile>::const_iterator it = uploaded_files.find(field_name);
+    std::map<std::string, std::vector<ParsedFile> >::const_iterator it = parsed_files.find(field_name);
     
-    if (it != uploaded_files.end())
+    if (it != parsed_files.end())
+        return it->second[0];
+    return ParsedFile();
+}
+
+std::vector<ParsedFile> HttpRequest::getFiles(const std::string& field_name) const
+{
+    std::map<std::string, std::vector<ParsedFile> >::const_iterator it = parsed_files.find(field_name);
+    
+    if (it != parsed_files.end())
         return it->second;
     
-    // Retourner un fichier vide si non trouvé
-    return UploadedFile();
+    return std::vector<ParsedFile>();
 }
 
 std::vector<std::string> HttpRequest::getFileNames() const
 {
     std::vector<std::string> names;
     
-    std::map<std::string, UploadedFile>::const_iterator it;
-    for (it = uploaded_files.begin(); it != uploaded_files.end(); ++it)
+    std::map<std::string, std::vector<ParsedFile> >::const_iterator it;
+    for (it = parsed_files.begin(); it != parsed_files.end(); ++it)
     {
-        names.push_back(it->first);
+        if (!it->second.empty())
+        {
+            names.push_back(it->first);
+        }
     }
     
     return names;
@@ -872,4 +897,22 @@ int HttpRequest::getErrorCode()const
 std::string HttpRequest::getErrorMessage()const
 {
     return error_message;
+}
+
+bool isCgi(const std::string& path)
+{
+    return (
+        path.find("/cgi-bin/") != std::string::npos ||
+        path.find(".py") != std::string::npos ||
+        path.find(".php") != std::string::npos ||
+        path.find(".cgi") != std::string::npos
+    );
+}
+
+size_t HttpRequest::getFileCount(const std::string& field_name) const
+{
+    std::map<std::string, std::vector<ParsedFile> >::const_iterator it = parsed_files.find(field_name);
+    if (it != parsed_files.end())
+        return it->second.size();
+    return 0;
 }
