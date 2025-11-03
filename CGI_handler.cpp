@@ -9,7 +9,7 @@ std::vector<char *> CGIHandler::createEnv(const HttpRequest &request, const std:
     env.push_back("QUERY_STRING=" + request.getQuery());
     std::ostringstream oss;
     oss << request.getContentLength();
-    env.push_back("CONTENT_LENGTH=" + oss.str());
+    // env.push_back("CONTENT_LENGTH=" + oss.str());
     env.push_back("CONTENT_TYPE=" + request.getHeader("Content-Type"));
     env.push_back("SCRIPT_FILENAME=" + root + script_path);
     env.push_back("PATH_INFO=" + script_path);

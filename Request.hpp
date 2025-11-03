@@ -11,7 +11,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-struct UploadedFile
+struct ParsedFile
 {
     std::string field_name;
     //pour le champ html <input name="avatar">
@@ -25,29 +25,7 @@ struct UploadedFile
     size_t size;
     //bool saveTo(const std::string& directory)const;
     //method pour save le file
-    UploadedFile() : size(0){}
-
-    bool saveTo(const std::string& directory) const
-    {
-        if (filename.empty() || data.empty())
-            return false;
-        std::string filepath = directory;
-        if (!filepath.empty() && filepath[filepath.length() - 1] != '/')
-            filepath += "/";
-        filepath += filename;
-        //construit juste le chemin complet du file
-        //dossier : uploads - file : test.txt = uploads/test.txt
-
-        std::ofstream file(filepath.c_str(), std::ios::binary);
-        //ouvrir le file en monde binaire
-        //std::ios::binary est crucial pour file binary
-        if (!file.is_open())
-            return false;
-        file.write(data.c_str(), data.size());
-        //on utilise write pour du binaire pas << 
-        file.close();
-        return true;
-    }
+    ParsedFile() : size(0){}
 };
 
 class HttpRequest
@@ -70,7 +48,7 @@ class HttpRequest
         std::map<std::string, std::string> post_params;
         std::map<std::string, std::string> cookies;
     
-        std::map<std::string, UploadedFile> uploaded_files;
+        std::map<std::string, std::vector<ParsedFile> > parsed_files;
         bool is_chunked;
         bool is_cgi;
         int error_code;
@@ -93,7 +71,8 @@ class HttpRequest
         const std::map<std::string, std::string>& getCookies() const;
         const std::map<std::string, std::string>& getQueryParams() const;
         bool hasFile(const std::string& field_name) const;
-        UploadedFile getFile(const std::string& field_name) const;
+        ParsedFile getFile(const std::string& field_name) const;
+        std::vector<ParsedFile> getFiles(const std::string& field_name) const;
         std::vector<std::string> getFileNames() const;
         size_t getFileSize(const std::string& path) const;
         void displayHeaders()const;
@@ -114,7 +93,7 @@ class HttpRequest
         bool isCgi(const std::string&path);
         void parsedChunkedBody(const std::string& raw_body);
         std::string dechunkBody(const std::string& chunked_data);
-//pas sur que ce doit etre la , peut etre private
+        size_t getFileCount(const std::string& field_name) const;
 
         bool isValid()const;
         int getErrorCode()const;
