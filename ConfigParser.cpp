@@ -155,16 +155,40 @@ void ConfigParser::parseLocationDirective(LocationConfig& location, const std::s
 	{
 		location.cgi_extension = parts[1];
 	}
+	else if (directive == "client_max_body_size" && parts.size() > 1)
+	{
+		std::string size_str = parts[1];
+		if (size_str[size_str.length() - 1] == 'M' || size_str[size_str.length() - 1] == 'm')
+		{
+			size_str = size_str.substr(0, size_str.length() - 1);
+			location.client_max_body_size = std::atol(size_str.c_str()) * 1024 * 1024;
+		}
+		else if (size_str[size_str.length() - 1] == 'K' || size_str[size_str.length() - 1] == 'k')
+		{
+			size_str = size_str.substr(0, size_str.length() - 1);
+			location.client_max_body_size = std::atol(size_str.c_str()) * 1024;
+		}
+		else
+		{
+			location.client_max_body_size = std::atol(size_str.c_str());
+		}
+	}
+	else if (directive == "autoindex" && parts.size() > 1)
+	{
+		location.autoindex = (parts[1] == "on" || parts[1] == "yes" || parts[1] == "true");
+	}
 }
 
 void ConfigParser::parseLocationBlock(ServerConfig& server, const std::string& content, size_t& pos)
 {
 	LocationConfig location;
 	location.cgi_enabled = false;
+	location.autoindex = false;
 
 	// Eredita proprietà da server
 	location.root = server.root;
 	location.index = server.index;
+	location.client_max_body_size = server.client_max_body_size;
 
 	// Trova il path della location (es: "location /cgi-bin {")
 	size_t location_start = content.find("location", pos);
@@ -260,6 +284,8 @@ void ConfigParser::parseServerBlock(const std::string& content, size_t& pos)
 		default_location.allowed_methods.push_back("POST");
 		default_location.allowed_methods.push_back("DELETE");
 		default_location.cgi_enabled = false;
+		default_location.autoindex = false;
+		default_location.client_max_body_size = server.client_max_body_size;
 		server.locations.push_back(default_location);
 	}
 
@@ -285,6 +311,8 @@ std::vector<ServerConfig> ConfigParser::parse()
 		default_location.allowed_methods.push_back("POST");
 		default_location.allowed_methods.push_back("DELETE");
 		default_location.cgi_enabled = false;
+		default_location.autoindex = false;
+		default_location.client_max_body_size = default_server.client_max_body_size;
 
 		default_server.locations.push_back(default_location);
 		servers.push_back(default_server);
@@ -341,6 +369,8 @@ std::vector<ServerConfig> ConfigParser::parse()
 		default_location.allowed_methods.push_back("POST");
 		default_location.allowed_methods.push_back("DELETE");
 		default_location.cgi_enabled = false;
+		default_location.autoindex = false;
+		default_location.client_max_body_size = default_server.client_max_body_size;
 
 		default_server.locations.push_back(default_location);
 		servers.push_back(default_server);
@@ -376,6 +406,8 @@ std::vector<ServerConfig> ConfigParser::parse()
 			default_location.allowed_methods.push_back("POST");
 			default_location.allowed_methods.push_back("DELETE");
 			default_location.cgi_enabled = false;
+			default_location.autoindex = false;
+			default_location.client_max_body_size = srv.client_max_body_size;
 
 			srv.locations.push_back(default_location);
 		}
@@ -409,6 +441,8 @@ void ConfigParser::displayServers() const
 			std::cout << "      Root: " << servers[i].locations[j].root << std::endl;
 			std::cout << "      Index: " << servers[i].locations[j].index << std::endl;
 			std::cout << "      CGI Enabled: " << (servers[i].locations[j].cgi_enabled ? "yes" : "no") << std::endl;
+			std::cout << "      Autoindex: " << (servers[i].locations[j].autoindex ? "yes" : "no") << std::endl;
+			std::cout << "      Max Body Size: " << servers[i].locations[j].client_max_body_size << " bytes" << std::endl;
 			std::cout << "      Allowed Methods: ";
 			for (size_t k = 0; k < servers[i].locations[j].allowed_methods.size(); k++)
 			{

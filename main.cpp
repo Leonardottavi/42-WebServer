@@ -548,14 +548,44 @@ int main(int argc, char **argv)
                     {
                         response.setStatus(request.getErrorCode());
                         response.addHeader("Content-Type", "text/html");
-                        response.setBody("<html><body><h1>Error " + intToString(request.getErrorCode()) +
-                                       "</h1><p>" + request.getErrorMessage() + "</p></body></html>");
+                        std::string error_body = getErrorPageContent(server_config, request.getErrorCode());
+                        response.setBody(error_body);
                         send_buffers[fd] = response.generate();
                         fds[i].events = POLLOUT;
                         continue;
                     }
 
                     std::cout << "Request: " << request.getMethod() << " " << request.getPath() << std::endl;
+
+                    // Trova la location per validare i metodi permessi
+                    LocationConfig* loc = findLocation(server_config, request.getPath());
+
+                    // Valida se il metodo è permesso per questa location
+                    if (loc != NULL)
+                    {
+                        bool method_allowed = false;
+                        for (size_t m = 0; m < loc->allowed_methods.size(); m++)
+                        {
+                            if (loc->allowed_methods[m] == request.getMethod())
+                            {
+                                method_allowed = true;
+                                break;
+                            }
+                        }
+
+                        if (!method_allowed)
+                        {
+                            std::cout << "Method " << request.getMethod() << " not allowed for " << request.getPath() << std::endl;
+                            response.setStatus(405);
+                            response.addHeader("Content-Type", "text/html");
+                            response.addHeader("Allow", "GET, POST"); // TODO: lista dinamica
+                            std::string error_body = getErrorPageContent(server_config, 405);
+                            response.setBody(error_body);
+                            send_buffers[fd] = response.generate();
+                            fds[i].events = POLLOUT;
+                            continue;
+                        }
+                    }
 
                     // Determina se è CGI
                     std::string path = request.getPath();
@@ -599,7 +629,8 @@ int main(int argc, char **argv)
                         {
                             response.setStatus(500);
                             response.addHeader("Content-Type", "text/html");
-                            response.setBody("<html><body><h1>500 Internal Server Error</h1></body></html>");
+                            std::string error_body = getErrorPageContent(server_config, 500);
+                            response.setBody(error_body);
                             send_buffers[fd] = response.generate();
                             fds[i].events = POLLOUT;
                         }
@@ -610,8 +641,29 @@ int main(int argc, char **argv)
                         LocationConfig* loc = findLocation(server_config, request.getPath());
                         std::string root = (loc != NULL) ? loc->root : server_config.root;
 
+                        std::cout << "DEBUG GET: loc=" << (loc ? loc->path : "NULL") << ", root=" << root << std::endl;
+
+                        // Rimuovi il prefisso della location dal path se necessario
+                        std::string file_path = request.getPath();
+                        if (loc != NULL && loc->path != "/" && file_path.find(loc->path) == 0)
+                        {
+                            // Rimuovi il prefisso della location
+                            file_path = file_path.substr(loc->path.length());
+                            if (file_path.empty() || file_path[0] != '/')
+                                file_path = "/" + file_path;
+                            std::cout << "Location match: " << loc->path << ", adjusted path: " << file_path << ", root: " << root << std::endl;
+                        }
+
                         // FILE STATICO
-                        response = FileHandler::handle(request, root);
+                        response = FileHandler::handleWithPath(request, root, file_path);
+
+                        // Se è un errore, usa custom error page
+                        if (response.getStatus() >= 400)
+                        {
+                            std::string error_body = getErrorPageContent(server_config, response.getStatus());
+                            response.setBody(error_body);
+                        }
+
                         send_buffers[fd] = response.generate();
                         fds[i].events = POLLOUT;
                     }

@@ -9,6 +9,7 @@ class FileHandler
 {
     public:
         static Response handle(const HttpRequest& res, const std::string& root_dir);
+        static Response handleWithPath(const HttpRequest& res, const std::string& root_dir, const std::string& file_path);
     private:
         static std::string getContentType(const std::string &path);
         static std::string readFile(const std::string &path);

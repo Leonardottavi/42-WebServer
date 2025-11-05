@@ -14,6 +14,8 @@ struct LocationConfig
 	std::string index;
 	bool cgi_enabled;
 	std::string cgi_extension;
+	size_t client_max_body_size;
+	bool autoindex;
 };
 
 struct ServerConfig

@@ -30,9 +30,9 @@ void Response::setStatus(int code)
         case 204:
             status_message = "No Content";
             break;
-        // succes mais pas de contenu a renvouer 
+        // succes mais pas de contenu a renvouer
         case 302:
-        //redirection temp , nav va auto sur new url 
+        //redirection temp , nav va auto sur new url
             status_message = "Found";
             break;
         case 400:
@@ -99,4 +99,9 @@ std::string Response::generate()
     response << "\r\n";
     response << body;
     return response.str();
+}
+
+int Response::getStatus() const
+{
+    return status_code;
 }

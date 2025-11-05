@@ -1,9 +1,15 @@
 #include "FileHandler.hpp"
+#include "ConfigParser.hpp"  // Per accedere a ServerConfig
 
  Response FileHandler::handle(const HttpRequest& res, const std::string& root_dir)
 {
+    return handleWithPath(res, root_dir, res.getPath());
+}
+
+ Response FileHandler::handleWithPath(const HttpRequest& res, const std::string& root_dir, const std::string& file_path)
+{
     Response resp(res);
-    std::string path = root_dir + res.getPath(); // construction du path complet
+    std::string path = root_dir + file_path; // construction du path complet
 
     if (path[path.length() - 1] == '/')
         path += "index.html";// ajout de index html apres / si trouver
@@ -23,7 +29,7 @@
     }
     std::string content = readFile(path);
     //lire file
-    
+
     //reponse positive
     resp.setStatus(200);
     resp.addHeader("Content-Type", getContentType(path));

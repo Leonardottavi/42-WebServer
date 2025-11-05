@@ -29,5 +29,6 @@ class Response
         void setStatus(int code);
         void setBody(const std::string& content);
         void addHeader(const std::string &key, const std::string &value);
+        int getStatus() const;
 };
 #endif
