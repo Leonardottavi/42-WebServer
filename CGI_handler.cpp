@@ -9,7 +9,7 @@ std::vector<char *> CGIHandler::createEnv(const HttpRequest &request, const std:
     env.push_back("QUERY_STRING=" + request.getQuery());
     std::ostringstream oss;
     oss << request.getContentLength();
-    // env.push_back("CONTENT_LENGTH=" + oss.str());
+    env.push_back("CONTENT_LENGTH=" + oss.str());
     env.push_back("CONTENT_TYPE=" + request.getHeader("Content-Type"));
     env.push_back("SCRIPT_FILENAME=" + root + script_path);
     env.push_back("PATH_INFO=" + script_path);
@@ -51,11 +51,15 @@ CgiProcess CGIHandler::spawnCgi(const HttpRequest &request, const std::string &s
         close(pipe_out[0]);
 
         std::vector<char *> env = createEnv(request, script_path, root);
+
+        // Costruisci il path completo dello script
+        std::string full_script_path = root + script_path;
+
         char *args[2];
-        args[0] = (char *)script_path.c_str();
+        args[0] = (char *)full_script_path.c_str();
         args[1] = NULL;
 
-        execve(script_path.c_str(), args, env.data());
+        execve(full_script_path.c_str(), args, env.data());
         perror("execve failed");
         freeEnv(env);
         exit(1);

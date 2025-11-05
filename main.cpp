@@ -249,9 +249,67 @@ int main(int argc, char **argv)
             // ==========================================
             if (revents & (POLLERR | POLLHUP | POLLNVAL))
             {
-                std::cerr << "Error on fd " << fd << ", closing..." << std::endl;
-
                 FdType type = getFdType(fd, listen_fds, cgi_map);
+
+                // POLLHUP su CGI INPUT è normale quando chiudiamo stdin
+                if (type == FD_CGI_INPUT && (revents & POLLHUP))
+                {
+                    // Rimuovi solo questo fd da poll, non chiudere il CGI
+                    fds.erase(fds.begin() + i);
+                    i--;
+                    continue;
+                }
+
+                // POLLHUP su CGI OUTPUT è normale quando il processo termina
+                // Leggi i dati rimanenti prima di chiudere
+                if (type == FD_CGI_OUTPUT && (revents & POLLHUP))
+                {
+                    CgiProcess &cgi = cgi_map[fd];
+
+                    // Leggi eventuali dati rimanenti
+                    char buf[1024];
+                    ssize_t n = read(fd, buf, sizeof(buf));
+                    if (n > 0)
+                    {
+                        cgi.read_buffer.append(buf, n);
+                        std::cout << "Read final " << n << " bytes from CGI" << std::endl;
+                    }
+
+                    // Trasferisci al client
+                    int client_fd = cgi_client_map[fd];
+                    if (send_buffers[client_fd].empty())
+                        send_buffers[client_fd] = "HTTP/1.1 200 OK\r\n";
+                    send_buffers[client_fd] += cgi.read_buffer;
+                    cgi.read_buffer.clear();
+
+                    // Abilita scrittura verso client
+                    for (size_t j = 0; j < fds.size(); j++)
+                    {
+                        if (fds[j].fd == client_fd)
+                        {
+                            fds[j].events |= POLLOUT;
+                            break;
+                        }
+                    }
+
+                    // Pulisci CGI
+                    std::cout << "CGI output closed (POLLHUP)" << std::endl;
+                    close(fd);
+                    if (!cgi.stdin_closed)
+                        close(cgi.pipe_in);
+                    cgi_map.erase(fd);
+                    cgi_client_map.erase(fd);
+                    fds.erase(fds.begin() + i);
+                    i--;
+
+                    // Aspetta il processo
+                    int status;
+                    waitpid(cgi.pid, &status, WNOHANG);
+
+                    continue;
+                }
+
+                std::cerr << "Error on fd " << fd << ", closing..." << std::endl;
 
                 if (type == FD_CGI_OUTPUT)
                 {
@@ -347,6 +405,11 @@ int main(int argc, char **argv)
 
                 // Trasferisci output al buffer del client
                 int client_fd = cgi_client_map[fd];
+
+                // Aggiungi HTTP status line solo se è la prima volta
+                if (send_buffers[client_fd].empty())
+                    send_buffers[client_fd] = "HTTP/1.1 200 OK\r\n";
+
                 send_buffers[client_fd] += cgi.read_buffer;
                 cgi.read_buffer.clear();
 
@@ -422,8 +485,9 @@ int main(int argc, char **argv)
                             cgi_ptr->stdin_closed = true;
                             std::cout << "CGI stdin closed" << std::endl;
 
-                            // Rimuovi POLLOUT da questo fd
-                            fds[i].events &= ~POLLOUT;
+                            // Rimuovi completamente questo fd da poll()
+                            fds.erase(fds.begin() + i);
+                            i--; // Compensa l'erase
                         }
                     }
 
@@ -717,7 +781,6 @@ int main(int argc, char **argv)
                         if (bytes_sent < 0)
                         {
                             // In modalità non-blocking, -1 è normale (riprova più tardi)
-                            // Non serve controllare errno
                             continue;
                         }
 
