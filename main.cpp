@@ -664,15 +664,20 @@ int main(int argc, char **argv)
 
                         if (bytes_sent < 0)
                         {
-                            if (errno != EAGAIN && errno != EWOULDBLOCK)
-                            {
-                                std::cerr << "send error on fd " << fd << std::endl;
-                                close(fd);
-                                send_buffers.erase(fd);
-                                recv_buffers.erase(fd);
-                                fds.erase(fds.begin() + i);
-                                i--;
-                            }
+                            // In modalità non-blocking, -1 è normale (riprova più tardi)
+                            // Non serve controllare errno
+                            continue;
+                        }
+
+                        if (bytes_sent == 0)
+                        {
+                            // Socket chiuso
+                            std::cerr << "Client fd=" << fd << " closed connection" << std::endl;
+                            close(fd);
+                            send_buffers.erase(fd);
+                            recv_buffers.erase(fd);
+                            fds.erase(fds.begin() + i);
+                            i--;
                             continue;
                         }
 
