@@ -1,5 +1,7 @@
 #include "FileHandler.hpp"
 #include "ConfigParser.hpp"  // Per accedere a ServerConfig
+#include <dirent.h>
+#include <sstream>
 
  Response FileHandler::handle(const HttpRequest& res, const std::string& root_dir)
 {
@@ -74,3 +76,78 @@
 {
     return (access(path.c_str(), R_OK) == 0);
 }
+
+std::vector<std::string> FileHandler::getFilesInDirectory(const std::string& dir_path)
+{
+    std::vector<std::string> files;
+    DIR* dir = opendir(dir_path.c_str());
+
+    if (!dir)
+        return files;
+
+    struct dirent* entry;
+    while ((entry = readdir(dir)) != NULL)
+    {
+        std::string filename = entry->d_name;
+
+        // Skip . and ..
+        if (filename == "." || filename == "..")
+            continue;
+
+        std::string fullPath = dir_path + "/" + filename;
+
+        // Only add files, not directories
+        if (entry->d_type == DT_REG && canRead(fullPath))
+            files.push_back(filename);
+    }
+
+    closedir(dir);
+    return files;
+}
+
+Response FileHandler::listDirectoryFiles(const HttpRequest& res, const std::string& root_dir, const std::string& dir_path)
+{
+    Response resp(res);
+    std::string fullPath = root_dir + dir_path;
+
+    // Normalizza il percorso (remove trailing slashes per dirent)
+    if (fullPath.length() > 1 && fullPath[fullPath.length() - 1] == '/')
+        fullPath = fullPath.substr(0, fullPath.length() - 1);
+
+    if (!fileExists(fullPath))
+    {
+        resp.setStatus(404);
+        resp.addHeader("Content-Type", "application/json");
+        resp.setBody("{\"error\": \"Directory not found\"}");
+        return resp;
+    }
+
+    if (!canRead(fullPath))
+    {
+        resp.setStatus(403);
+        resp.addHeader("Content-Type", "application/json");
+        resp.setBody("{\"error\": \"Access denied\"}");
+        return resp;
+    }
+
+    std::vector<std::string> files = getFilesInDirectory(fullPath);
+
+    // Build JSON response
+    std::stringstream json;
+    json << "{\"files\": [";
+
+    for (size_t i = 0; i < files.size(); ++i)
+    {
+        json << "\"" << files[i] << "\"";
+        if (i < files.size() - 1)
+            json << ", ";
+    }
+
+    json << "]}";
+
+    resp.setStatus(200);
+    resp.addHeader("Content-Type", "application/json");
+    resp.setBody(json.str());
+    return resp;
+}
+

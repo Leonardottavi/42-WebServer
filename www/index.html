@@ -621,7 +621,7 @@
     </div>
 
     <script>
-        // Load Files Gallery
+        // Load Files Gallery - VERSIONE DINAMICA
         async function loadFilesGallery() {
             const gallery = document.getElementById('files-gallery');
             const loader = document.getElementById('gallery-loader');
@@ -629,68 +629,68 @@
             gallery.innerHTML = '';
             loader.style.display = 'block';
 
-            const allFiles = new Map();
-            const commonImageNames = [
-                '1120242.jpg', 'sample.jpg', 'test.jpg', 'image.jpg', 'photo.jpg',
-                'sample.png', 'test.png', 'image.png', 'photo.png'
-            ];
+            try {
+                // Richiedi dinamicamente la lista dei file dalla directory /files
+                const response = await fetch('/api/list-files/files');
 
-            for (const filename of commonImageNames) {
-                try {
-                    const fileResponse = await fetch('/files/' + filename, { method: 'HEAD' });
-                    if (fileResponse.ok) {
-                        allFiles.set(filename, '/files/' + filename);
-                    }
-                } catch (error) {
-                    // File doesn't exist, continue
+                if (!response.ok) {
+                    throw new Error('Failed to fetch file list');
                 }
-            }
 
-            if (allFiles.size === 0) {
-                loader.innerHTML = '<p style="color: #718096; font-size: 0.95rem;">📁 No files yet<br><br>💡 Upload files to see them here!</p>';
-                return;
-            }
+                const data = await response.json();
+                const files = data.files || [];
 
-            loader.style.display = 'none';
+                if (files.length === 0) {
+                    loader.innerHTML = '<p style="color: #718096; font-size: 0.95rem;">📁 No files yet<br><br>💡 Upload files to see them here!</p>';
+                    return;
+                }
 
-            allFiles.forEach((filepath, filename) => {
-                const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(filename);
-                const fileItem = document.createElement('div');
-                fileItem.className = 'gallery-item';
+                loader.style.display = 'none';
 
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.value = filepath;
-                checkbox.onclick = (e) => e.stopPropagation();
-                fileItem.appendChild(checkbox);
+                // Crea una galleria per ogni file trovato
+                files.forEach((filename) => {
+                    const filepath = '/files/' + filename;
+                    const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(filename);
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'gallery-item';
 
-                if (isImage) {
-                    const img = document.createElement('img');
-                    img.src = filepath;
-                    img.onerror = () => {
-                        img.style.display = 'none';
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.value = filepath;
+                    checkbox.onclick = (e) => e.stopPropagation();
+                    fileItem.appendChild(checkbox);
+
+                    if (isImage) {
+                        const img = document.createElement('img');
+                        img.src = filepath;
+                        img.onerror = () => {
+                            img.style.display = 'none';
+                            const icon = document.createElement('div');
+                            icon.textContent = '🖼️';
+                            icon.style.fontSize = '40px';
+                            fileItem.insertBefore(icon, fileItem.firstChild);
+                        };
+                        fileItem.appendChild(img);
+                    } else {
                         const icon = document.createElement('div');
-                        icon.textContent = '🖼️';
+                        icon.textContent = '📄';
                         icon.style.fontSize = '40px';
-                        fileItem.insertBefore(icon, fileItem.firstChild);
-                    };
-                    fileItem.appendChild(img);
-                } else {
-                    const icon = document.createElement('div');
-                    icon.textContent = '📄';
-                    icon.style.fontSize = '40px';
-                    icon.style.marginBottom = '8px';
-                    fileItem.appendChild(icon);
-                }
+                        icon.style.marginBottom = '8px';
+                        fileItem.appendChild(icon);
+                    }
 
-                const name = document.createElement('p');
-                name.textContent = filename;
-                fileItem.appendChild(name);
+                    const name = document.createElement('p');
+                    name.textContent = filename;
+                    fileItem.appendChild(name);
 
-                fileItem.onclick = () => { checkbox.checked = !checkbox.checked; };
+                    fileItem.onclick = () => { checkbox.checked = !checkbox.checked; };
 
-                gallery.appendChild(fileItem);
-            });
+                    gallery.appendChild(fileItem);
+                });
+            } catch (error) {
+                console.error('Error loading files:', error);
+                loader.innerHTML = '<p style="color: #718096; font-size: 0.95rem;">❌ Error loading files<br><br>' + error.message + '</p>';
+            }
         }
 
         // Upload Files

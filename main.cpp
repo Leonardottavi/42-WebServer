@@ -621,6 +621,39 @@ int main(int argc, char **argv)
 
                     std::cout << "Request: " << request.getMethod() << " " << request.getPath() << std::endl;
 
+                    // Aggiungi endpoint speciale per listare file di una directory
+                    if (request.getPath().find("/api/list-files/") == 0 && request.getMethod() == "GET")
+                    {
+                        std::string dir_path = request.getPath().substr(16); // Rimuovi "/api/list-files/"
+                        if (dir_path.empty())
+                            dir_path = "/";
+
+                        // Verifica che il path cominci con /
+                        if (dir_path[0] != '/')
+                            dir_path = "/" + dir_path;
+
+                        LocationConfig* loc = findLocation(server_config, dir_path);
+                        std::string root = (loc != NULL) ? loc->root : server_config.root;
+
+                        // Se la location ha un path diverso da /, devo usare solo il root
+                        // perché findLocation ritorna la location corretta per quel path
+                        std::string list_path = "/";
+                        if (loc != NULL && loc->path != "/" && dir_path.find(loc->path) == 0)
+                        {
+                            // La directory è il root della location
+                            list_path = "/";
+                        }
+                        else
+                        {
+                            list_path = dir_path;
+                        }
+
+                        response = FileHandler::listDirectoryFiles(request, root, list_path);
+                        send_buffers[fd] = response.generate();
+                        fds[i].events = POLLOUT;
+                        continue;
+                    }
+
                     // Trova la location per validare i metodi permessi
                     LocationConfig* loc = findLocation(server_config, request.getPath());
 
