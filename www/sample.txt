@@ -1,3 +1,0 @@
-This is a sample text file for testing.
-You can use this to test GET, POST, and DELETE operations.
-Lorem ipsum dolor sit amet, consectetur adipiscing elit.

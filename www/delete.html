@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Test DELETE</title>
+    <title>DELETE Test</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -50,28 +50,28 @@
 </head>
 <body>
     <div class="container">
-        <h1>🗑️ Test DELETE</h1>
+        <h1>🗑️ DELETE Test</h1>
         <input type="text" id="filepath" placeholder="Ex: /uploads/test.txt">
         <button onclick="deleteFile()">Delete File</button>
         <div id="result"></div>
     </div>
-    
+
     <script>
         async function deleteFile() {
             const filepath = document.getElementById('filepath').value;
             const resultDiv = document.getElementById('result');
-            
+
             if (!filepath) {
                 resultDiv.className = 'result error';
-                resultDiv.textContent = '❌ Please enter a filepath';
+                resultDiv.textContent = '❌ Please enter a file path';
                 return;
             }
-            
+
             try {
                 const response = await fetch(filepath, {
                     method: 'DELETE'
                 });
-                
+
                 if (response.status === 204) {
                     resultDiv.className = 'result success';
                     resultDiv.textContent = '✅ File deleted successfully';

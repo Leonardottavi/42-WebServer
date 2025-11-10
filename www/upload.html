@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Test Upload</title>
+    <title>Upload Test</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -65,45 +65,45 @@
 </head>
 <body>
     <div class="container">
-        <h1>📤 Test Upload Webserv</h1>
-        
+        <h1>📤 Webserv Upload Test</h1>
+
         <form class="upload-form" id="uploadForm" enctype="multipart/form-data" method="POST" action="/upload">
-            <label for="fileInput">Select a file :</label>
+            <label for="fileInput">Select a file:</label>
             <input type="file" id="fileInput" name="file" required multiple>
-            
+
             <button type="submit">📤 Upload</button>
         </form>
-        
+
         <div class="result" id="result"></div>
     </div>
-    
+
     <script>
         document.getElementById('uploadForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-            
+
             const fileInput = document.getElementById('fileInput');
             const resultDiv = document.getElementById('result');
-            
+
             if (fileInput.files.length === 0) {
                 resultDiv.className = 'result error';
                 resultDiv.style.display = 'block';
-                resultDiv.textContent = '❌ Select a file';
+                resultDiv.textContent = '❌ Please select a file';
                 return;
             }
-            
+
             const formData = new FormData();
             for (let i = 0; i < fileInput.files.length; i++) {
                 formData.append('file', fileInput.files[i]);
             }
-            
+
             try {
                 const response = await fetch('/upload', {
                     method: 'POST',
                     body: formData
                 });
-                
+
                 const text = await response.text();
-                
+
                 if (response.ok) {
                     resultDiv.className = 'result success';
                     resultDiv.innerHTML = text;
@@ -112,10 +112,10 @@
                     resultDiv.innerHTML = text;
                 }
                 resultDiv.style.display = 'block';
-                
+
             } catch (error) {
                 resultDiv.className = 'result error';
-                resultDiv.textContent = '❌ Error : ' + error.message;
+                resultDiv.textContent = '❌ Error: ' + error.message;
                 resultDiv.style.display = 'block';
             }
         });
