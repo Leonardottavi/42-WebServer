@@ -1,12 +1,25 @@
-console.log("✅ JavaScript chargé ! FileHandler marche.");
+// Console logging for debugging
+console.log('✅ JavaScript loaded successfully');
 
+// Test JS functionality
 function testJS() {
-    document.getElementById("js-result").innerHTML = "✅ JavaScript work ! FileHandler manage correctly files .js";
-    document.getElementById("js-result").style.color = "#4CAF50";
-    document.getElementById("js-result").style.fontWeight = "bold";
-    alert("✅ JS OK !");
+    const resultElement = document.getElementById('js-result');
+    if (resultElement) {
+        resultElement.innerHTML = '✅ JavaScript is working perfectly!';
+        resultElement.style.color = '#56ab2f';
+        resultElement.style.fontWeight = 'bold';
+    }
+    console.log('✅ JS Test Passed');
 }
 
-window.onload = function() {
-    console.log("✅ Page load, all static files are served !");
-};
+// Initialization on page load
+window.addEventListener('DOMContentLoaded', function() {
+    console.log('✅ Page loaded, all static files served correctly');
+});
+
+// Generic logger
+function log(message) {
+    console.log(`[WebServer] ${message}`);
+}
+
+log('JavaScript module initialized');

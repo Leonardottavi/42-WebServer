@@ -4,7 +4,7 @@ HttpRequest::HttpRequest(): content_length(0), has_content_length(false),is_chun
 
 void HttpRequest::parse(std::string request)
 {
-    //on converti en stream la str pour eviter direct les 
+    //on converti en stream la str pour eviter direct les
     //espace entre les infos
     std::istringstream stream(request);
     std::string line;
@@ -18,9 +18,9 @@ void HttpRequest::parse(std::string request)
         //on enleve le \r qui termine une ligne de HttpRequest
         line.erase(line.size() - 1);
     }
-    
+
     std::istringstream line_stream(line);
-    //creation de lobjet linestream qui lit line 
+    //creation de lobjet linestream qui lit line
     line_stream >> method >> uri >> version;
     // >> saute automatiquement les espaces , mais stock ce que tu trouve avant dant >> method
     // puis dans >> uri puis dans version
@@ -112,8 +112,8 @@ void HttpRequest::validateContentLength()
         //devrait sappeler iss ( convention)
         // pour convertir content length en valeur int
 
-        
-        //stock la valeur trouver it (length) converti en stream dans input_strring_stream 
+
+        //stock la valeur trouver it (length) converti en stream dans input_strring_stream
         //
         if (!(input_strring_stream >> content_length))
         {
@@ -128,8 +128,8 @@ void HttpRequest::validateContentLength()
             std::cerr   << "Error: Content-Length too large (" << content_length
                         << " > " << MAX_BODY_SIZE << ")" << std::endl;
             error_code = 413;
-            error_message = "Payload Too Large";    
-            return;            
+            error_message = "Payload Too Large";
+            return;
             //throw std::runtime_error("413 Payload Too Large");
         }
         if (body.length() != content_length)
@@ -152,7 +152,7 @@ void HttpRequest::validateContentLength()
         {
             std::cerr   << "Error: Body too large without Content-Length(" << body.length()
                         << " > " << MAX_BODY_SIZE << ")" << std::endl;
-            error_code = 413;        
+            error_code = 413;
             error_message = "Payload Too Large";
             //throw std::runtime_error("413 Payload Too Large");
         }
@@ -209,7 +209,7 @@ size_t HttpRequest::getContentLength() const
 
 bool HttpRequest::hasContentLength()const
 {
-   return has_content_length; 
+   return has_content_length;
 }
 
 std::string HttpRequest::toLower(const std::string& str)const
@@ -235,11 +235,11 @@ void HttpRequest::validateMethod()
     }
     if (!isMethodValid(method))
     {
-            
-        std::cerr << "Error: Invalid HTTP method: " << method << std::endl; 
+
+        std::cerr << "Error: Invalid HTTP method: " << method << std::endl;
         error_code = 405;
         error_message = "Method Not Allowed";
-        //std::cerr << "Error: Invalid HTTP method: " << method << std::endl; 
+        //std::cerr << "Error: Invalid HTTP method: " << method << std::endl;
         //throw std::runtime_error("405 Method Not Allowed");
     }
     std::cout << "Method validated: " << method << std::endl;
@@ -247,7 +247,7 @@ void HttpRequest::validateMethod()
 
 bool HttpRequest::isMethodValid(const std::string& method)const
 {
-    if (method == "GET" || method == "POST" || method == "DELETE")
+    if (method == "GET" || method == "POST" || method == "DELETE" || method == "HEAD")
         return true;
     //je dois gerer plus ???
     return false;
@@ -286,7 +286,7 @@ void HttpRequest::validateUri()
     }
     if (uri.size() > max_uri_len)
     {
-        std::cerr   << "Error: URI too long (" << uri.length() 
+        std::cerr   << "Error: URI too long (" << uri.length()
                     << " > " << max_uri_len <<std::endl;
         error_code = 414;
         error_message = "URI Too Long";
@@ -357,18 +357,18 @@ void HttpRequest::parseQueryString()
     // on extrait tout avant le ? pour trouver le path
     std::string query_string = uri.substr(question_mark_pos + 1);
     query = query_string;
-    //inverse tout apres le ? 
+    //inverse tout apres le ?
     std::istringstream stream(query_string);
     // on let met en stream pour avant de morceau en morceau
     std::string pair;
     while (std::getline(stream, pair, '&'))
     {
-        // ici vu que c un stream on peut jump de & en & 
+        // ici vu que c un stream on peut jump de & en &
         size_t equal_pos = pair.find('=');
-        //si on trouve un = donc on a un a ajouter  
+        //si on trouve un = donc on a un a ajouter
         if (equal_pos != std::string::npos)
         {
-            // ici on ajt le key et ensuit value 
+            // ici on ajt le key et ensuit value
             std::string key = pair.substr(0, equal_pos);
             std::string value = pair.substr(equal_pos + 1);
             key = urlDecode(key);
@@ -415,7 +415,7 @@ std::string HttpRequest::urlDecode(const std::string& str)const
     // pour le result decoder
     for (size_t i = 0; i < str.length(); i++)
     {
-        
+
         if (str[i] == '%' && i + 2 < str.length())
         {
             std::string hex = str.substr(i + 1, 2);
@@ -423,11 +423,11 @@ std::string HttpRequest::urlDecode(const std::string& str)const
             std::istringstream iss(hex);
             int value;
             if (iss >> std::hex >> value)
-            {//on converti la valeur en 
+            {//on converti la valeur en
                 decoded_char = static_cast<char>(value);
                 result += decoded_char;
                 i += 2;
-                //on saute le code 
+                //on saute le code
             }
             else
                 result += str[i];
@@ -479,15 +479,15 @@ void HttpRequest::parsePostBody()
     {
         // Extraire la boundary
         std::string boundary = extractBoundary(content_type);
-        
+
         if (boundary.empty())
         {
             std::cerr << "Error: Multipart boundary not found in Content-Type" << std::endl;
             return;
         }
-        
+
         std::cout << "Parsing multipart with boundary: '" << boundary << "'" << std::endl;
-        
+
         // Parser le body multipart
         parseMultipartBody(boundary);
     }
@@ -564,7 +564,7 @@ std::string HttpRequest::extractBoundary(const std::string& content_type)const
     size_t end_pos = content_type.find(';', boundary_pos);
     //ex1:"boundary=----WebKit; charset=utf-8"
     //ex2:: "boundary=----WebKit;"
-    // si parametre apres, end pos = ';' 
+    // si parametre apres, end pos = ';'
     std::string boundary;
     if (end_pos != std::string::npos)
         boundary = content_type.substr(boundary_pos, end_pos - boundary_pos);
@@ -655,7 +655,7 @@ void HttpRequest::parseMultipartBody(const std::string& boundary)
     {
         total_files += it->second.size();
     }
-    
+
     std::cout   << "Multipart body parsed: " << post_params.size() << " fields, "
                 << total_files << " files" << std::endl;
 }
@@ -665,7 +665,7 @@ void HttpRequest::parseSinglePart(const std::string& part)
     // une part a ce format :
     // Content-Disposition: form-data; name="username"
     // Content-Type: text/plain
-    // 
+    //
     // john
     size_t separator = part.find("\r\n\r\n");
     size_t header_end = 0;
@@ -759,7 +759,7 @@ bool HttpRequest::hasFile(const std::string& field_name)const
 ParsedFile HttpRequest::getFile(const std::string& field_name) const
 {
     std::map<std::string, std::vector<ParsedFile> >::const_iterator it = parsed_files.find(field_name);
-    
+
     if (it != parsed_files.end())
         return it->second[0];
     return ParsedFile();
@@ -768,17 +768,17 @@ ParsedFile HttpRequest::getFile(const std::string& field_name) const
 std::vector<ParsedFile> HttpRequest::getFiles(const std::string& field_name) const
 {
     std::map<std::string, std::vector<ParsedFile> >::const_iterator it = parsed_files.find(field_name);
-    
+
     if (it != parsed_files.end())
         return it->second;
-    
+
     return std::vector<ParsedFile>();
 }
 
 std::vector<std::string> HttpRequest::getFileNames() const
 {
     std::vector<std::string> names;
-    
+
     std::map<std::string, std::vector<ParsedFile> >::const_iterator it;
     for (it = parsed_files.begin(); it != parsed_files.end(); ++it)
     {
@@ -787,7 +787,7 @@ std::vector<std::string> HttpRequest::getFileNames() const
             names.push_back(it->first);
         }
     }
-    
+
     return names;
 }
 
@@ -803,7 +803,7 @@ bool HttpRequest::isRegularFile(const std:: string &path)const
     return S_ISREG(path_stat.st_mode);
     //st mode contient des bits qui encodent type + permission ( pas tres clair)
     //s isreg est une macro qui test les bits de st mode
-    //true si file normal 
+    //true si file normal
 }
 
 bool HttpRequest::isDirectory(const std::string &path_directory)const
@@ -819,9 +819,9 @@ bool HttpRequest::isDirectory(const std::string &path_directory)const
 bool HttpRequest::fileExists(const std::string &path)const
 {
     return (access(path.c_str(), F_OK) == 0);
-    //access () test l'accessibliter dun file 
+    //access () test l'accessibliter dun file
     // F_ok test son existence juste
-    // 0 si file existe else -1 
+    // 0 si file existe else -1
 }
 
 size_t HttpRequest::getFileSize(const std::string &path)const
@@ -860,7 +860,7 @@ void HttpRequest::parsedChunkedBody(const std::string &raw_body)
 std::string HttpRequest::dechunkBody(const std::string &chunked_data)
 {
     std::string result;
-    
+
     size_t pos = 0;
     while (true)
     {

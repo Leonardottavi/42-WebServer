@@ -6,7 +6,7 @@
 /*   By: lottavi <lottavi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/11/10 10:47:40 by lottavi           #+#    #+#             */
-/*   Updated: 2025/11/10 10:47:42 by lottavi          ###   ########.fr       */
+/*   Updated: 2025/11/10 11:55:12 by lottavi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -257,32 +257,66 @@ void ConfigParser::parseServerBlock(const std::string& content, size_t& pos)
 	if (block_start == std::string::npos)
 		return;
 
-	// Trova la fine del blocco
-	size_t block_end = content.find('}', block_start);
-	if (block_end == std::string::npos)
+	// Trova la fine del blocco (matching closing brace)
+	int brace_count = 1;
+	size_t block_end = block_start + 1;
+	while (block_end < content.length() && brace_count > 0)
+	{
+		if (content[block_end] == '{')
+			brace_count++;
+		else if (content[block_end] == '}')
+			brace_count--;
+		block_end++;
+	}
+	block_end--; // Point to the closing brace
+
+	if (brace_count != 0)
 		return;
 
 	std::string block_content = content.substr(block_start + 1, block_end - block_start - 1);
 
-	// Parsa le direttive principali e i location block
+	// Parsa le direttive principali
 	std::stringstream ss(block_content);
 	std::string line;
 
 	while (std::getline(ss, line))
 	{
-		if (isLocationBlock(line))
+		std::string trimmed = trim(line);
+		if (trimmed.empty() || trimmed[0] == '#')
+			continue;
+		if (trimmed.find("location") == 0)
+			continue; // Skip location lines, handle them separately
+		parseDirective(server, line);
+	}
+
+	// Parsa tutti i location blocks
+	size_t location_search = block_start;
+	while ((location_search = content.find("location", location_search)) != std::string::npos && location_search < block_end)
+	{
+		// Verifica che non sia dentro un commento
+		size_t line_start = content.rfind('\n', location_search);
+		if (line_start == std::string::npos)
+			line_start = 0;
+		else
+			line_start++;
+
+		// Verifica se c'è un # prima di 'location'
+		bool in_comment = false;
+		for (size_t i = line_start; i < location_search; i++)
 		{
-			// Parsa il location block
-			size_t location_search_start = content.find(line, pos);
-			if (location_search_start != std::string::npos)
+			if (content[i] == '#')
 			{
-				parseLocationBlock(server, content, location_search_start);
+				in_comment = true;
+				break;
 			}
 		}
-		else
+
+		if (!in_comment)
 		{
-			parseDirective(server, line);
+			parseLocationBlock(server, content, location_search);
 		}
+
+		location_search++;
 	}
 
 	// Se non ci sono location blocks, crea uno di default per /

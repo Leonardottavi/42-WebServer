@@ -731,6 +731,32 @@ int main(int argc, char **argv)
                         send_buffers[fd] = response.generate();
                         fds[i].events = POLLOUT;
                     }
+                    else if (request.getMethod() == "HEAD")
+                    {
+                        // HEAD è come GET ma senza il body
+                        LocationConfig* loc = findLocation(server_config, request.getPath());
+                        std::string root = (loc != NULL) ? loc->root : server_config.root;
+
+                        std::cout << "DEBUG HEAD: loc=" << (loc ? loc->path : "NULL") << ", root=" << root << std::endl;
+
+                        // Rimuovi il prefisso della location dal path se necessario
+                        std::string file_path = request.getPath();
+                        if (loc != NULL && loc->path != "/" && file_path.find(loc->path) == 0)
+                        {
+                            file_path = file_path.substr(loc->path.length());
+                            if (file_path.empty() || file_path[0] != '/')
+                                file_path = "/" + file_path;
+                        }
+
+                        // FILE STATICO - stessa logica di GET
+                        response = FileHandler::handleWithPath(request, root, file_path);
+
+                        // Per HEAD, rimuovi il body ma mantieni i headers
+                        response.setBody("");
+
+                        send_buffers[fd] = response.generate();
+                        fds[i].events = POLLOUT;
+                    }
                     else if (request.getMethod() == "POST")
                     {
                         //Usa findLocation per determinare root
