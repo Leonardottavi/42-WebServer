@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   UploadHandler.cpp                                  :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: lottavi <lottavi@student.42.fr>            +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/11/14 09:52:15 by lottavi           #+#    #+#             */
+/*   Updated: 2025/11/14 09:52:17 by lottavi          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "UploadHandler.hpp"
 
 static std::string intToString(int n)
@@ -36,7 +48,7 @@ Response UploadHandler::handle(const HttpRequest& req, const std::string &upload
             total_count++;
             if (saveFile(files[j], upload_dir))
             {
-                result_html += "<li> <b>" + files[j].filename + "</b> uploaded (" 
+                result_html += "<li> <b>" + files[j].filename + "</b> uploaded ("
                 + intToString(files[j].size) + " bytes)</li>";
                 success_count++;
             }
@@ -53,7 +65,7 @@ Response UploadHandler::handle(const HttpRequest& req, const std::string &upload
         resp.setStatus(500);
     resp.addHeader("Content-Type", "text/html");
     resp.setBody(result_html);
-    
+
     return resp;
 }
 
