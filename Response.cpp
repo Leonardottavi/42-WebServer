@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   Response.cpp                                       :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: lottavi <lottavi@student.42.fr>            +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/11/14 10:10:21 by lottavi           #+#    #+#             */
+/*   Updated: 2025/11/14 10:10:23 by lottavi          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "Response.hpp"
 
 Response::Response(const HttpRequest& req): status_code(200), status_message("OK"), request(&req), http_version("HTTP/1.1")
