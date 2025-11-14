@@ -530,8 +530,8 @@
                         <h3 class="section-title">Test HTTP Methods</h3>
                         <p class="section-desc">Test different HTTP methods supported by the server:</p>
                         <button class="btn-primary" onclick="testMethod('GET')" style="width: 100%; margin-bottom: 8px;">📥 GET</button>
-                        <button class="btn-primary" onclick="testMethod('HEAD')" style="width: 100%; margin-bottom: 8px;">👤 HEAD</button>
-                        <button class="btn-primary" onclick="testMethod('OPTIONS')" style="width: 100%; margin-bottom: 8px;">⚙️ OPTIONS</button>
+                        <button class="btn-success" onclick="testMethod('POST')" style="width: 100%; margin-bottom: 8px;">� POST</button>
+                        <button class="btn-danger" onclick="testMethod('DELETE')" style="width: 100%; margin-bottom: 8px;">🗑️ DELETE</button>
                         <div id="method-result" class="result"></div>
                     </div>
                 </div>
@@ -576,8 +576,6 @@
                         <li>GET - Retrieve files and resources</li>
                         <li>POST - Upload files</li>
                         <li>DELETE - Remove files</li>
-                        <li>HEAD - Get headers only</li>
-                        <li>OPTIONS - Get allowed methods</li>
                     </ul>
                 </div>
                 <div class="info-block">
@@ -593,194 +591,6 @@
         </div>
     </div>
 
-    <script>
-        // Load Files Gallery - VERSIONE DINAMICA
-        async function loadFilesGallery() {
-            const gallery = document.getElementById('files-gallery');
-            const loader = document.getElementById('gallery-loader');
-
-            gallery.innerHTML = '';
-            loader.style.display = 'block';
-
-            try {
-                // Richiedi dinamicamente la lista dei file dalla directory /files
-                const response = await fetch('/api/list-files/files');
-
-                if (!response.ok) {
-                    throw new Error('Failed to fetch file list');
-                }
-
-                const data = await response.json();
-                const files = data.files || [];
-
-                if (files.length === 0) {
-                    loader.innerHTML = '<p style="color: #718096; font-size: 0.95rem;">📁 No files yet<br><br>💡 Upload files to see them here!</p>';
-                    return;
-                }
-
-                loader.style.display = 'none';
-
-                // Crea una galleria per ogni file trovato
-                files.forEach((filename) => {
-                    const filepath = '/files/' + filename;
-                    const isImage = /\.(jpg|jpeg|png|gif|webp)$/i.test(filename);
-                    const fileItem = document.createElement('div');
-                    fileItem.className = 'gallery-item';
-
-                    const checkbox = document.createElement('input');
-                    checkbox.type = 'checkbox';
-                    checkbox.value = filepath;
-                    checkbox.onclick = (e) => e.stopPropagation();
-                    fileItem.appendChild(checkbox);
-
-                    if (isImage) {
-                        const img = document.createElement('img');
-                        img.src = filepath;
-                        img.onerror = () => {
-                            img.style.display = 'none';
-                            const icon = document.createElement('div');
-                            icon.textContent = '🖼️';
-                            icon.style.fontSize = '40px';
-                            fileItem.insertBefore(icon, fileItem.firstChild);
-                        };
-                        fileItem.appendChild(img);
-                    } else {
-                        const icon = document.createElement('div');
-                        icon.textContent = '📄';
-                        icon.style.fontSize = '40px';
-                        icon.style.marginBottom = '8px';
-                        fileItem.appendChild(icon);
-                    }
-
-                    const name = document.createElement('p');
-                    name.textContent = filename;
-                    fileItem.appendChild(name);
-
-                    fileItem.onclick = () => { checkbox.checked = !checkbox.checked; };
-
-                    gallery.appendChild(fileItem);
-                });
-            } catch (error) {
-                console.error('Error loading files:', error);
-                loader.innerHTML = '<p style="color: #718096; font-size: 0.95rem;">❌ Error loading files<br><br>' + error.message + '</p>';
-            }
-        }
-
-        // Upload Files
-        async function uploadFiles() {
-            const fileInput = document.getElementById('fileInput');
-            const resultDiv = document.getElementById('upload-result');
-
-            if (fileInput.files.length === 0) {
-                resultDiv.className = 'result error';
-                resultDiv.textContent = '❌ Please select a file';
-                resultDiv.style.display = 'block';
-                return;
-            }
-
-            const formData = new FormData();
-            for (let i = 0; i < fileInput.files.length; i++) {
-                formData.append('file', fileInput.files[i]);
-            }
-
-            try {
-                const response = await fetch('/upload', { method: 'POST', body: formData });
-                const text = await response.text();
-
-                if (response.ok) {
-                    resultDiv.className = 'result success';
-                    resultDiv.innerHTML = '✅ Upload successful!';
-                } else {
-                    resultDiv.className = 'result error';
-                    resultDiv.innerHTML = '❌ Upload failed!';
-                }
-                resultDiv.style.display = 'block';
-                fileInput.value = '';
-
-                setTimeout(() => { loadFilesGallery(); }, 500);
-            } catch (error) {
-                resultDiv.className = 'result error';
-                resultDiv.textContent = '❌ Error: ' + error.message;
-                resultDiv.style.display = 'block';
-            }
-        }
-
-        // Delete Selected Files
-        async function deleteSelectedFiles() {
-            const checkboxes = document.querySelectorAll('#files-gallery input[type="checkbox"]:checked');
-
-            if (checkboxes.length === 0) {
-                alert('❌ Please select files to delete');
-                return;
-            }
-
-            if (!confirm(`Delete ${checkboxes.length} file(s)?`)) {
-                return;
-            }
-
-            let successCount = 0;
-            let failCount = 0;
-
-            for (const checkbox of checkboxes) {
-                try {
-                    const filepath = checkbox.value;
-                    console.log(`Deleting: ${filepath}`);
-
-                    const response = await fetch(filepath, { method: 'DELETE' });
-                    console.log(`Response status: ${response.status} for ${filepath}`);
-
-                    if (response.status === 204) {
-                        successCount++;
-                        console.log(`✅ Deleted: ${filepath}`);
-                    } else {
-                        failCount++;
-                        console.log(`❌ Failed to delete: ${filepath} (Status: ${response.status})`);
-                    }
-                } catch (error) {
-                    failCount++;
-                    console.error(`Error deleting file:`, error);
-                }
-            }
-
-            await new Promise(resolve => setTimeout(resolve, 300));
-            loadFilesGallery();
-
-            if (failCount === 0) {
-                alert(`✅ Deleted ${successCount} file(s)`);
-            } else {
-                alert(`⚠️ Deleted ${successCount} file(s), Failed: ${failCount}`);
-            }
-        }
-
-        // Test HTTP Methods
-        async function testMethod(method) {
-            const resultDiv = document.getElementById('method-result');
-
-            try {
-                const response = await fetch('/', { method: method });
-                resultDiv.className = 'result info';
-                resultDiv.innerHTML = `✅ ${method} request successful<br>Status: ${response.status} ${response.statusText}`;
-                resultDiv.style.display = 'block';
-            } catch (error) {
-                resultDiv.className = 'result error';
-                resultDiv.textContent = '❌ Error: ' + error.message;
-                resultDiv.style.display = 'block';
-            }
-        }
-
-        // Trigger Error
-        function triggerError(errorCode) {
-            const paths = {
-                404: '/404.html',
-                403: '/403.html',
-                405: '/405.html',
-                500: '/500.html'
-            };
-            window.location.href = paths[errorCode];
-        }
-
-        // Load gallery on page load
-        document.addEventListener('DOMContentLoaded', loadFilesGallery);
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
