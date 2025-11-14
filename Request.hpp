@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   Request.hpp                                        :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: lottavi <lottavi@student.42.fr>            +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/11/05 16:34:58 by lottavi           #+#    #+#             */
+/*   Updated: 2025/11/14 10:35:50 by lottavi          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #ifndef HTTPREQUEST_HPP
 #define HTTPREQUEST_HPP
 
@@ -47,7 +59,7 @@ class HttpRequest
 
         std::map<std::string, std::string> post_params;
         std::map<std::string, std::string> cookies;
-    
+
         std::map<std::string, std::vector<ParsedFile> > parsed_files;
         bool is_chunked;
         bool is_cgi;
@@ -79,12 +91,12 @@ class HttpRequest
         bool hasContentLength()const;
         void validateMethod();
         bool isMethodValid(const std::string& method)const;
-        
+
 
         bool isRegularFile(const std:: string &path)const;
         bool isDirectory(const std::string& path_directory) const;
         bool fileExists(const std::string& path) const;
-        
+
         bool canRead(const std::string& path) const;
         bool canWrite(const std::string& path) const;
         bool canExecute(const std::string& path) const;

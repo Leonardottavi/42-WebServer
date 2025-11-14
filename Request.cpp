@@ -1,3 +1,15 @@
+/* ************************************************************************** */
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   Request.cpp                                        :+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: lottavi <lottavi@student.42.fr>            +#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: 2025/11/14 10:34:51 by lottavi           #+#    #+#             */
+/*   Updated: 2025/11/14 10:34:52 by lottavi          ###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */
+
 #include "Request.hpp"
 
 HttpRequest::HttpRequest(): content_length(0), has_content_length(false),is_chunked(false), error_code(0), error_message(""){}
