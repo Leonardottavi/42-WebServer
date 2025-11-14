@@ -537,34 +537,7 @@
                 </div>
             </div>
 
-            <!-- Card 3: Custom Request -->
-            <div class="card">
-                <div class="card-header">
-                    <span class="card-icon">📡</span>
-                    Custom Request
-                </div>
-                <div class="card-body">
-                    <div class="section">
-                        <h3 class="section-title">Send Custom Request</h3>
-                        <label for="httpMethod">HTTP Method:</label>
-                        <select id="httpMethod">
-                            <option value="GET">GET</option>
-                            <option value="POST">POST</option>
-                            <option value="DELETE">DELETE</option>
-                            <option value="PUT">PUT</option>
-                            <option value="HEAD">HEAD</option>
-                        </select>
-                        <label for="customPath">Path:</label>
-                        <input type="text" id="customPath" placeholder="/index.html">
-                        <label for="customBody">Request Body (optional):</label>
-                        <textarea id="customBody" placeholder="Request body..." style="height: 80px;"></textarea>
-                        <button class="btn-primary" onclick="sendCustomRequest()" style="width: 100%; margin-top: 10px;">📡 Send</button>
-                        <div id="custom-result" class="result"></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Card 4: Error Pages -->
+            <!-- Card 3: Error Pages -->
             <div class="card">
                 <div class="card-header">
                     <span class="card-icon">⚠️</span>
@@ -787,39 +760,6 @@
                 const response = await fetch('/', { method: method });
                 resultDiv.className = 'result info';
                 resultDiv.innerHTML = `✅ ${method} request successful<br>Status: ${response.status} ${response.statusText}`;
-                resultDiv.style.display = 'block';
-            } catch (error) {
-                resultDiv.className = 'result error';
-                resultDiv.textContent = '❌ Error: ' + error.message;
-                resultDiv.style.display = 'block';
-            }
-        }
-
-        // Send Custom Request
-        async function sendCustomRequest() {
-            const method = document.getElementById('httpMethod').value;
-            const path = document.getElementById('customPath').value;
-            const body = document.getElementById('customBody').value;
-            const resultDiv = document.getElementById('custom-result');
-
-            if (!path) {
-                resultDiv.className = 'result error';
-                resultDiv.textContent = '❌ Please enter a path';
-                resultDiv.style.display = 'block';
-                return;
-            }
-
-            try {
-                const options = { method: method };
-                if (body && (method === 'POST' || method === 'PUT')) {
-                    options.body = body;
-                }
-
-                const response = await fetch(path, options);
-                const text = await response.text();
-
-                resultDiv.className = response.ok ? 'result success' : 'result error';
-                resultDiv.innerHTML = `<strong>${method} ${path}</strong><br>Status: ${response.status} ${response.statusText}`;
                 resultDiv.style.display = 'block';
             } catch (error) {
                 resultDiv.className = 'result error';
